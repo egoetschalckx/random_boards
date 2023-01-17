@@ -15,6 +15,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
       home: MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
@@ -30,14 +31,15 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  static const maxX = 5;
+  static const maxY = 9;
 
   Queue<Color> usedColors = Queue();
 
-  List<List<Board>> headbouard = List.empty(growable: true);
+  List<List<Board>> headboard = List.empty(growable: true);
+  Column headboardColumn = Column();
 
   static const Color pecan = Color(0xFFE0A03E);
-  //static const Color walnut = Color(0x450E00);
   static const Color walnut = Color(0xFF450E00);
   static const Color grey = Color(0xFF706F6D);
   static const Color mahogany = Color(0xFFEB9D4A);
@@ -45,18 +47,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
   static const List<Color> colors = [ pecan, walnut, grey, mahogany, cabernet ];
 
-  //List<List<Board>> headboard = genHeadboard(5, 12);
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    List<List<Board>> headboard = genHeadboard(5, 12);
-    Column column = _headboard2widgets(headboard);
+    headboard = genHeadboard(maxX, maxY);
+    headboardColumn = _headboard2widgets(headboard);
     
     return Scaffold(
       appBar: AppBar(
@@ -65,14 +59,16 @@ class _MyHomePageState extends State<MyHomePage> {
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             onPressed: () {
-              List<List<Board>> headboard = genHeadboard(5, 12);
-              Column column = _headboard2widgets(headboard);
+              setState(() {
+                headboard = genHeadboard(maxX, maxY);
+                headboardColumn = _headboard2widgets(headboard);
+              });
             },
             tooltip: 'Refresh',
           )
         ],
       ),
-      body: Center(child: column)
+      body: Center(child: headboardColumn)
     );
   }
 
@@ -91,16 +87,27 @@ class _MyHomePageState extends State<MyHomePage> {
     List<Board> boards = List.empty(growable: true);
     var rng = Random();
     int remainX = x;
+
+    int colorRng = -1;
+    int lastColor = -1;
     while (remainX > 2) {
       int size = rng.nextInt(remainX);
+
       int colorRng = rng.nextInt(5);
+      while (lastColor == colorRng) {
+        colorRng = rng.nextInt(5);
+      }
+      lastColor = colorRng;
       Board board = Board(size, colors[colorRng]);
       boards.add(board);
       remainX -= size;
     }
 
-    int color = rng.nextInt(5);
-    boards.add(Board(remainX, colors[color]));
+    colorRng = rng.nextInt(5);
+    while (lastColor == colorRng) {
+      colorRng = rng.nextInt(5);
+    }
+    boards.add(Board(remainX, colors[colorRng]));
 
     return boards;
   }
@@ -135,6 +142,8 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 class Board {
+  EdgeInsets ei = const EdgeInsets.all(2.0);
+
   int length;
   Color color;
 
@@ -143,7 +152,11 @@ class Board {
   toWidget() {
     DecoratedBox db = DecoratedBox(decoration: BoxDecoration(color: color));
     SizedBox sb = SizedBox(height: 2 * 22, width: length.toDouble() * 150, child: db);
+    Padding padding = Padding(
+      padding: ei,
+      child: sb,
+    );
 
-    return sb;
+    return padding;
   }
 }
